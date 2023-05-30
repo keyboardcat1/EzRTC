@@ -1,6 +1,6 @@
 {
   "name": "@keyboardcat/ezrtc",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Simplifying the WebRTC API",
   "main": "lib/main.js",
   "typings": "lib/main.d.ts",

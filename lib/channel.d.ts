@@ -1,4 +1,4 @@
-import * as signal from "../signal";
+import * as signal from "./signal";
 interface SignallingChannelEventMap {
     open: Event;
     error: Event;

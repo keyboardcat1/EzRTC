@@ -1,4 +1,4 @@
-import * as signal from "../signal";
+import * as signal from "./signal";
 import * as channel from "./channel";
 declare enum RTCSignalType {
     OFFER = "offer",

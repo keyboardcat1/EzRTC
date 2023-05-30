@@ -1,3 +1,4 @@
-export * as client from "./client/client";
-export * as server from "./server/server";
 export * as signal from "./signal";
+export * as rtc from "./rtc";
+export * as channel from "./channel";
+export * as streams from "./streams";
