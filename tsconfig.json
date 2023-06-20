@@ -10,6 +10,6 @@
     "declarationDir": "lib"
   
     },
-    "files": ["src/main.ts"]
+    "files": ["src/index.ts"]
     
 }

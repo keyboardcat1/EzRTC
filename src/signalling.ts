@@ -1,11 +1,74 @@
-import * as signal from "./signal";
+/**
+ * The type of an id of a peer on a signalling network
+ */
+export type SignallingPeerId = string;
 
+/**
+ * An interface representing a signal relayed from or to a signalling server
+ */
+export interface Signal {
+    /**
+     * Any JSON stringify-able data
+     */
+    readonly data: any;
+}
+
+/**
+ * An interface representing a signal relayed from a signalling server
+ */
+export interface IncomingSignal extends Signal {
+    /**
+     * The peer sending this signal
+     */
+    readonly from: SignallingPeerId;
+}
+/**
+ * An interface representing a signal relayed to a signalling server
+ */
+export interface OutgoingSignal extends Signal {
+    /**
+     * The peer this signal will be relayed to
+     */
+    readonly to: SignallingPeerId;
+}
+
+interface IncomingSignalEventInit extends EventInit, IncomingSignal {
+}
+/**
+ * An event fired whenever an {@link IncomingSignal} has been received from a signalling server
+ */
+export class IncomingSignalEvent extends Event implements IncomingSignal {
+    readonly from: SignallingPeerId;
+    readonly data: any;
+
+    constructor (type: string, eventInitDict: IncomingSignalEventInit) {
+        super(type, eventInitDict);
+        this.from = eventInitDict.from;
+        this.data = eventInitDict.data;
+    }
+}
+
+interface OutgoingSignalEventInit extends EventInit, OutgoingSignal {
+}
+/**
+ * An event fired whenever an {@link OutgoingSignal} has been sent to a signalling server
+ */
+export class OutgoingSignalEvent extends Event implements OutgoingSignal {
+    readonly to: SignallingPeerId;
+    readonly data: any;
+
+    constructor (type: string, eventInitDict: OutgoingSignalEventInit) {
+        super(type, eventInitDict);
+        this.to = eventInitDict.to;
+        this.data = eventInitDict.data;
+    }
+}
 
 
 interface SignallingChannelEventMap {
     open: Event;
     error: Event
-    signal: signal.IncomingSignalEvent;
+    signal: IncomingSignalEvent;
     close: CloseEvent;
 }
 
@@ -24,7 +87,7 @@ export abstract class SignallingChannel extends EventTarget {
     /**
      * Fired whenever a signal has been received
      */
-    onsignal: (ev: signal.IncomingSignalEvent) => any | null;
+    onsignal: (ev: IncomingSignalEvent) => any | null;
     /**
      * Fired whenever this channel closes
      */
@@ -34,7 +97,7 @@ export abstract class SignallingChannel extends EventTarget {
      * Sends relayed data to a peer on the network
      * @param signal an {@link OutgoingSignal} to the peer in question
      */
-    abstract signal(s: signal.OutgoingSignal): void;
+    abstract signal(s: OutgoingSignal): void;
     /**
      * Closes this channel
      */
@@ -45,7 +108,7 @@ export abstract class SignallingChannel extends EventTarget {
      * @param to the peer in question
      * @returns a {@link SignallingPort} communicating with the peer in question
      */
-    port(to: signal.SignallingPeerIdType): SignallingPort {
+    port(to: SignallingPeerId): SignallingPort {
         return new SignallingPort(to, this);
     }
 
@@ -90,7 +153,7 @@ export class SignallingPort extends EventTarget {
     /**
      * The peer this port is communicating with
      */
-    readonly to: signal.SignallingPeerIdType;
+    readonly to: SignallingPeerId;
 
     /**
      * Fired whenever a message has been received from the peer
@@ -104,7 +167,7 @@ export class SignallingPort extends EventTarget {
      * @param to the peer to communicate with
      * @param channel the {@link SignallingChannel} used to communicate with the peer in questoin 
      */
-    constructor(to: signal.SignallingPeerIdType, channel: SignallingChannel) {
+    constructor(to: SignallingPeerId, channel: SignallingChannel) {
         super();
         this.to = to;
         this.channel = channel;
@@ -175,9 +238,9 @@ export class WSSignallingChannel extends SignallingChannel {
         });
 
         this.ws.addEventListener ("message", ev => {
-        let s: signal.IncomingSignal = JSON.parse(ev.data) as signal.IncomingSignal;
+        let s: IncomingSignal = JSON.parse(ev.data) as IncomingSignal;
         if (s.from && s.data) {
-            let event = new signal.IncomingSignalEvent("signal", s);
+            let event = new IncomingSignalEvent("signal", s);
             if (this.onsignal) this.onsignal(event);
             this.dispatchEvent(event);
         } 
@@ -189,7 +252,7 @@ export class WSSignallingChannel extends SignallingChannel {
         })
     }
 
-    signal(s: signal.OutgoingSignal): void {
+    signal(s: OutgoingSignal): void {
         this.ws.send(JSON.stringify(s));
     }
     

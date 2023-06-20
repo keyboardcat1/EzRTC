@@ -1,16 +1,4 @@
 /**
- * A utility abstraction over a `MediaStream` and a HTML media element linked and automatically configured
- */
-export declare class HTMLMediaStream extends MediaStream {
-    private _element;
-    constructor(element: HTMLMediaElement);
-    constructor(element: HTMLMediaElement, stream: MediaStream);
-    constructor(element: HTMLMediaElement, tracks: MediaStreamTrack[]);
-    get element(): HTMLMediaElement;
-    set element(element: HTMLMediaElement);
-    private configureElement;
-}
-/**
  * A utility abstraction over a `MediaStream` and a `RTCPeerConnection` linked and automatically configured to ouput to this stream
  */
 export declare class RTCMediaStream extends MediaStream {

@@ -1,5 +1,4 @@
-import * as signal from "./signal";
-import * as channel from "./channel";
+import * as signalling from "./signalling";
 
 enum RTCSignalType {
     OFFER = "offer",
@@ -20,15 +19,15 @@ export class SignallingRTCPeerConnection extends RTCPeerConnection {
     /**
      * The peer the port is communicating with
      */
-    readonly to: signal.SignallingPeerIdType;
+    readonly to: signalling.SignallingPeerId;
 
-    private readonly port: channel.SignallingPort;
+    private readonly port: signalling.SignallingPort;
 
     /**
      * 
-     * @param port {@link channel.SignallingPort} to relay signalling data
+     * @param port {@link signalling.SignallingPort} to relay signalling data
      */
-    constructor(configuration: RTCConfiguration, port: channel.SignallingPort) {
+    constructor(port: signalling.SignallingPort, configuration?: RTCConfiguration) {
         super(configuration);
         this.to = port.to;
         this.port = port;
@@ -82,11 +81,11 @@ export class SignallingRTCPeerConnectionFactory extends EventTarget {
      */
     onoffer: (ev: OfferEvent) => any | null;
 
-    private readonly connections: {[to: signal.SignallingPeerIdType]: SignallingRTCPeerConnection} = {};
-    private readonly channel: channel.SignallingChannel;
-    private readonly configuration: RTCConfiguration;
+    private readonly connections: {[to: signalling.SignallingPeerId]: SignallingRTCPeerConnection} = {};
+    private readonly channel: signalling.SignallingChannel;
+    private configuration?: RTCConfiguration;
 
-    constructor(configuration: RTCConfiguration, channel: channel.SignallingChannel) {
+    constructor(channel: signalling.SignallingChannel, configuration?: RTCConfiguration) {
         super();
         this.channel = channel;
         this.configuration = configuration;
@@ -96,8 +95,8 @@ export class SignallingRTCPeerConnectionFactory extends EventTarget {
             if ((ev.from in this.connections) || data.type != RTCSignalType.OFFER) return;
 
             let accept: (s: IncomingOfferSignal) => SignallingRTCPeerConnection = (s) => {
-                let connection = new SignallingRTCPeerConnection(this.configuration, this.channel.port(ev.from));
-                let event = new signal.IncomingSignalEvent("signal", {from: s.from, data: s.data});
+                let connection = new SignallingRTCPeerConnection(this.channel.port(ev.from), this.configuration);
+                let event = new signalling.IncomingSignalEvent("signal", {from: s.from, data: s.data});
                 this.connections[ev.from] = connection;
                 this.channel.dispatchEvent(event);
                 return connection;
@@ -113,12 +112,20 @@ export class SignallingRTCPeerConnectionFactory extends EventTarget {
      * @param to the peer in question
      * @returns a {@link SignallingRTCPeerConnection} with the peer in question
      */
-    createConnection(to: signal.SignallingPeerIdType): SignallingRTCPeerConnection {
-        let connection = new SignallingRTCPeerConnection(this.configuration, this.channel.port(to));
+    createConnection(to: signalling.SignallingPeerId): SignallingRTCPeerConnection {
+        let connection = new SignallingRTCPeerConnection(this.channel.port(to), this.configuration);
         connection.addEventListener("iceconnectionstatechange", () => {
             if (connection.iceConnectionState === "disconnected") delete this.connections[connection.to];
         })
         return connection;
+    }
+
+    getConfiguration(): RTCConfiguration | undefined {
+        return this.configuration;
+    }
+
+    setConfiguration(configuration: RTCConfiguration): void {
+        this.configuration = configuration;
     }
 
     addEventListener<K extends keyof SignallingRTCPeerConnectionFactoryEventMap>(
@@ -149,7 +156,7 @@ export class SignallingRTCPeerConnectionFactory extends EventTarget {
 }
 
 
-interface IncomingOfferSignal extends signal.IncomingSignal {
+interface IncomingOfferSignal extends signalling.IncomingSignal {
     data: {type: RTCSignalType.OFFER, body: RTCSessionDescriptionInit};
 }
 interface OfferEventInit extends EventInit, IncomingOfferSignal {
@@ -160,7 +167,7 @@ export class OfferEvent extends Event {
     /**
      * The peer sending this offer
      */
-    readonly from: signal.SignallingPeerIdType;
+    readonly from: signalling.SignallingPeerId;
     
     constructor(type: string, eventInitDict: OfferEventInit) {
         super(type, eventInitDict);

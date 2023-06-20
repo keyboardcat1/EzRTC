@@ -1,8 +1,58 @@
-import * as signal from "./signal";
+/**
+ * The type of an id of a peer on a signalling network
+ */
+export declare type SignallingPeerId = string;
+/**
+ * An interface representing a signal relayed from or to a signalling server
+ */
+export interface Signal {
+    /**
+     * Any JSON stringify-able data
+     */
+    readonly data: any;
+}
+/**
+ * An interface representing a signal relayed from a signalling server
+ */
+export interface IncomingSignal extends Signal {
+    /**
+     * The peer sending this signal
+     */
+    readonly from: SignallingPeerId;
+}
+/**
+ * An interface representing a signal relayed to a signalling server
+ */
+export interface OutgoingSignal extends Signal {
+    /**
+     * The peer this signal will be relayed to
+     */
+    readonly to: SignallingPeerId;
+}
+interface IncomingSignalEventInit extends EventInit, IncomingSignal {
+}
+/**
+ * An event fired whenever an {@link IncomingSignal} has been received from a signalling server
+ */
+export declare class IncomingSignalEvent extends Event implements IncomingSignal {
+    readonly from: SignallingPeerId;
+    readonly data: any;
+    constructor(type: string, eventInitDict: IncomingSignalEventInit);
+}
+interface OutgoingSignalEventInit extends EventInit, OutgoingSignal {
+}
+/**
+ * An event fired whenever an {@link OutgoingSignal} has been sent to a signalling server
+ */
+export declare class OutgoingSignalEvent extends Event implements OutgoingSignal {
+    readonly to: SignallingPeerId;
+    readonly data: any;
+    constructor(type: string, eventInitDict: OutgoingSignalEventInit);
+}
 interface SignallingChannelEventMap {
     open: Event;
     error: Event;
-    signal: signal.IncomingSignalEvent;
+    signal: IncomingSignalEvent;
     close: CloseEvent;
 }
 /**
@@ -20,7 +70,7 @@ export declare abstract class SignallingChannel extends EventTarget {
     /**
      * Fired whenever a signal has been received
      */
-    onsignal: (ev: signal.IncomingSignalEvent) => any | null;
+    onsignal: (ev: IncomingSignalEvent) => any | null;
     /**
      * Fired whenever this channel closes
      */
@@ -29,7 +79,7 @@ export declare abstract class SignallingChannel extends EventTarget {
      * Sends relayed data to a peer on the network
      * @param signal an {@link OutgoingSignal} to the peer in question
      */
-    abstract signal(s: signal.OutgoingSignal): void;
+    abstract signal(s: OutgoingSignal): void;
     /**
      * Closes this channel
      */
@@ -39,7 +89,7 @@ export declare abstract class SignallingChannel extends EventTarget {
      * @param to the peer in question
      * @returns a {@link SignallingPort} communicating with the peer in question
      */
-    port(to: signal.SignallingPeerIdType): SignallingPort;
+    port(to: SignallingPeerId): SignallingPort;
     addEventListener<K extends keyof SignallingChannelEventMap>(type: K, callback: (ev: SignallingChannelEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
     removeEventListener<K extends keyof SignallingChannelEventMap>(type: K, callback: (ev: SignallingChannelEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
 }
@@ -53,7 +103,7 @@ export declare class SignallingPort extends EventTarget {
     /**
      * The peer this port is communicating with
      */
-    readonly to: signal.SignallingPeerIdType;
+    readonly to: SignallingPeerId;
     /**
      * Fired whenever a message has been received from the peer
      */
@@ -64,7 +114,7 @@ export declare class SignallingPort extends EventTarget {
      * @param to the peer to communicate with
      * @param channel the {@link SignallingChannel} used to communicate with the peer in questoin
      */
-    constructor(to: signal.SignallingPeerIdType, channel: SignallingChannel);
+    constructor(to: SignallingPeerId, channel: SignallingChannel);
     /**
      * Sends a message to the peer
      * @param message any JSON stringify-able data
@@ -79,7 +129,7 @@ export declare class SignallingPort extends EventTarget {
 export declare class WSSignallingChannel extends SignallingChannel {
     private readonly ws;
     constructor(url: string | URL, protocols?: string | string[]);
-    signal(s: signal.OutgoingSignal): void;
+    signal(s: OutgoingSignal): void;
     close(): void;
 }
 export {};
